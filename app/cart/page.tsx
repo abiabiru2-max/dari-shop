@@ -44,7 +44,7 @@ export default function CartPage() {
       quantity: item.quantity
     }));
 
-    // Orders хүснэгт рүү хадгалах (Синтакс зассан)
+    // Orders хүснэгт рүү хадгалах
     const { error } = await supabase.from("orders").insert([
       { 
         phone, 
@@ -85,6 +85,8 @@ export default function CartPage() {
               ) : (
                 cart.map((item, index) => (
                   <div key={item.id || index} className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center justify-between">
+                    
+                    {/* Зураг болон Нэр */}
                     <div className="flex items-center gap-4">
                       <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded" />
                       <div>
@@ -92,16 +94,22 @@ export default function CartPage() {
                         <p className="text-blue-600 font-bold">₮ {item.price.toLocaleString()}</p>
                       </div>
                     </div>
+
+                    {/* 💡 ЗАССАН ХЭСЭГ: Товчнууд болон устгах хэсгийн хаалтууд */}
                     <div className="flex items-center gap-4">
+                      {/* Нэмэх хасах хэсэг */}
                       <div className="flex items-center border rounded-md overflow-hidden">
-                        <button onClick={() => updateQuantity(item.name, item.quantity - 1)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition">-</button>
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition">-</button>
                         <span className="px-4 font-medium">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.name, item.quantity + 1)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition">+</button>
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="px-3 py-1 bg-gray-100 hover:bg-gray-200 transition">+</button>
                       </div>
-                      <button onClick={() => removeFromCart(item.name)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition" title="Устгах">
+                      
+                      {/* Устгах товч */}
+                      <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-full transition" title="Устгах">
                         🗑️
                       </button>
                     </div>
+
                   </div>
                 ))
               )}

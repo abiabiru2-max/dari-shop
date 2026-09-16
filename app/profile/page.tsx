@@ -2,11 +2,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../utils/supabase";
 import Navbar from "../../components/Navbar";
-import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const router = useRouter();
-  
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,8 +12,6 @@ export default function ProfilePage() {
 
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [adminPassword, setAdminPassword] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -73,12 +68,6 @@ export default function ProfilePage() {
     setOrders([]);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminPassword === "1234") router.push("/admin");
-    else alert("Нууц үг буруу байна!");
-  };
-
   // НЭВТРЭЭГҮЙ ҮЕД
   if (!session) {
     return (
@@ -128,7 +117,7 @@ export default function ProfilePage() {
     );
   }
 
-  // НЭВТЭРСЭН ҮЕД
+  // НЭВТЭРСЭН ҮЕД (Зөвхөн хэрэглэгчийн мэдээлэл харагдана)
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
@@ -171,21 +160,6 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* АДМИН НЭВТРЭХ */}
-      <div className="py-8 text-center mt-auto">
-        {!showAdminLogin ? (
-          <button onClick={() => setShowAdminLogin(true)} className="text-xs text-gray-300 hover:text-gray-500 transition px-4 py-2">
-            Админ нэвтрэх
-          </button>
-        ) : (
-          <form onSubmit={handleAdminLogin} className="max-w-xs mx-auto flex gap-2">
-            <input type="password" placeholder="PIN код" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="flex-1 border rounded p-1.5 text-sm text-center outline-none" autoFocus />
-            <button type="submit" className="bg-gray-800 text-white px-4 rounded text-sm hover:bg-gray-900">Орох</button>
-            <button type="button" onClick={() => setShowAdminLogin(false)} className="text-gray-400 text-xs px-2">✕</button>
-          </form>
-        )}
       </div>
     </div>
   );
