@@ -43,6 +43,15 @@ export default function Navbar() {
                 {totalItems}
               </span>
             </Link>
+
+            {/* 💡 ШИНЭ: Админ руу орох нууцлаг товч (Энгийн хэрэглэгчдэд анзаарагдахгүй шахам) */}
+  <Link 
+    href="/admin" 
+    className="text-gray-300 hover:text-gray-600 transition flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100"
+    title="Удирдах самбар"
+  >
+    ⚙️ {/* Эсвэл 🔒, 👨‍💻 гэх мэт дүрс байж болно */}
+  </Link>
           </div>
 
         </div>
