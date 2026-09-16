@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "../../utils/supabase";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function AdminDashboard() {
   // Нэвтрэх хэсгийн state
@@ -21,43 +22,73 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  // Нэвтрэх нууц үг шалгах (Түр хугацаанд PIN: 1234 гэж тохируулж болно)
-  const handleLogin = (e: any) => {
+  // Нэвтрэх нууц үг шалгах
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === "1234") {
       setIsAuthenticated(true);
       fetchOrders();
     } else {
-      alert("Нууц үг буруу байна! (Туршилтын нууц үг: 1234)");
+      toast.error("Нууц үг буруу байна! (Туршилтын нууц үг: 1234)");
     }
   };
 
   // Захиалгуудыг татах
   const fetchOrders = async () => {
     setLoadingOrders(true);
-    const { data, error } = await supabase.from("orders").select("*");
-    if (!error && data) {
-      setOrders(data);
-    }
-    setLoadingOrders(false);
-  };
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("id", { ascending: false });
+      
+      if (error) {
+        console.error("Захиалга татахад алдаа гарлаа:", error.message);
+        toast.error("Захиалга татахад алдаа гарлаа: " + error.message);
+      } else if (data) {
+        setOrders(data);
+      }
+      setLoadingOrders(false);
+    };
 
-  // Захиалгын төлөв өөрчлөх
-  const updateOrderStatus = async (id: number, newStatus: string) => {
+  // Захиалгын төлөв өөрчлөх & Үлдэгдэл хасах
+  const updateOrderStatus = async (order: any) => {
+    console.log("Сонгосон захиалга:",order);
+    if (!order || !order.id) {
+      toast.error("Захиалгын ID олдсонгүй!");
+      return;
+    }
+        // 1. Статусыг Баталгаажсан болгож шинэчлэх
     const { error } = await supabase
       .from("orders")
-      .update({ status: newStatus })
-      .eq("id", id);
+      .update({ status: "Баталгаажсан" })
+      .eq("id", order.id);
 
-    if (!error) {
-      fetchOrders();
-    } else {
-      alert("Алдаа гарлаа: " + error.message);
+    if (error) {
+      toast.error("Алдаа гарлаа: " + error.message);
+      return;
     }
+
+    // 2. Хэрэв сагсны барааны мэдээлэл (items) байвал үлдэгдэл хасах функц дуудна
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+      const { error: rpcError } = await supabase.rpc("reduce_product_stock", {
+        order_items: order.items,
+      });
+
+      if (rpcError) {
+        console.error("Үлдэгдэл хасахад алдаа гарлаа:", rpcError.message);
+        toast.success("Төлбөр баталгаажсан боловч үлдэгдэл хасахад алдаа гарлаа.");
+      } else {
+        toast.success("Захиалга баталгаажиж, барааны үлдэгдэл хасагдлаа!");
+      }
+    } else {
+      toast.success("Захиалга баталгаажлаа!");
+    }
+    // Жагсаалтыг дахин шинэчлэх
+    fetchOrders();
   };
 
   // Шинэ бараа хадгалах
-  const handleSaveProduct = async (e: any) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingProduct(true);
     const { error } = await supabase.from("products").insert([
@@ -70,9 +101,9 @@ export default function AdminDashboard() {
     ]);
 
     if (error) {
-      alert("Алдаа гарлаа: " + error.message);
+      toast.error("Алдаа гарлаа: " + error.message);
     } else {
-      alert("Бараа амжилттай нэмэгдлээ!");
+      toast.success("Бараа амжилттай нэмэгдлээ!");
       setName("");
       setPrice("");
       setStock("");
@@ -85,6 +116,7 @@ export default function AdminDashboard() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <Toaster position="top-center" />
         <form onSubmit={handleLogin} className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full space-y-4">
           <h1 className="text-xl font-bold text-center text-gray-800">Админ нэвтрэх</h1>
           <div>
@@ -106,9 +138,10 @@ export default function AdminDashboard() {
     );
   }
 
-  // 2. НЭВТЭРСЭН ҮЕД ХАРУУЛАХ АДМИН СҮЛЖЭЭ (DASHBOARD)
+  // 2. НЭВТЭРСЭН ҮЕД ХАРУУЛАХ АДМИН DASHBOARD
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <Toaster position="top-center" />
       <div className="max-w-5xl mx-auto">
         
         {/* Толгой хэсэг ба Цэс солих товчлуурууд */}
@@ -181,7 +214,7 @@ export default function AdminDashboard() {
                         <td className="p-4">
                           {order.status !== "Баталгаажсан" && (
                             <button
-                              onClick={() => updateOrderStatus(order.id, "Баталгаажсан")}
+                              onClick={() => updateOrderStatus(order)}
                               className="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 transition font-medium"
                             >
                               Төлбөр баталгаажуулах
