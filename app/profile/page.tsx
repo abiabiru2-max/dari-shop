@@ -61,7 +61,7 @@ export default function ProfilePage() {
   };
 
   const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault("Таны цуцлах хүсэлт админ руу илгээгдлээ. Түр хүлээнэ үү.");
+    e.preventDefault();
     setAuthLoading(true);
     if (isLoginMode) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
