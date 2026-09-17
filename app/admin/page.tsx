@@ -98,6 +98,24 @@ export default function AdminDashboard() {
     }
     fetchOrders();
   };
+  // 💡 ШИНЭЭР НЭМЭХ ФУНКЦ: Захиалга цуцлах
+  const cancelOrder = async (order: any) => {
+    if (!window.confirm("Энэ захиалгыг цуцлахдаа итгэлтэй байна уу? Барааны үлдэгдэл буцаж нэмэгдэнэ.")) return;
+
+    // 1. Төлөвийг Цуцлагдсан болгох
+    const { error } = await supabase.from("orders").update({ status: "Цуцлагдсан" }).eq("id", order.id);
+    if (error) return toast.error("Алдаа гарлаа: " + error.message);
+
+    // 2. Хэрэв өмнө нь "Баталгаажсан" байсан бол үлдэгдлийг нь буцааж нэмэх
+    if (order.status === "Баталгаажсан" && order.items && order.items.length > 0) {
+      const { error: rpcError } = await supabase.rpc("restore_product_stock", { order_items: order.items });
+      if (rpcError) toast.error("Захиалга цуцлагдсан ч үлдэгдэл буцаж нэмэгдсэнгүй.");
+      else toast.success("Захиалга цуцлагдаж, барааны үлдэгдэл буцаж нэмэгдлээ!");
+    } else {
+      toast.success("Захиалга цуцлагдлаа!");
+    }
+    fetchOrders(); // Жагсаалтыг шинэчлэх
+  };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,12 +221,18 @@ export default function AdminDashboard() {
                               {order.status}
                             </span>
                           </td>
-                          <td className="p-4">
-                            {order.status !== "Баталгаажсан" && (
+                          <td className="p-4 flex gap-2">
+                            {order.status !== "Баталгаажсан" && order.status !=="Цуцлагдсан" &&(
                               <button onClick={() => updateOrderStatus(order)} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 transition font-medium">
                                 Баталгаажуулах
                               </button>
                             )}
+                            {order.status !== "Цуцлагдсан" && (
+                              <button onClick={() => cancelOrder(order)} className="bg-red-100 text-red-600 px-3 py-1.5 rounded text-xs hover:bg-red-200 transition font-medium border border-red-200">
+      Цуцлах
+    </button>
+)}
+
                           </td>
                         </tr>
                       ))

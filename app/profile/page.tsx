@@ -40,8 +40,28 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
+  const requestCancellation = async (orderId: number) => {
+    if(!window.confirm("Та энэ захиалгыг цуцлах хүсэлт илгээхдээ итгэлтэй байна уу?")) return;
+
+    setLoading(true);
+    const {error} = await supabase
+    .from ("orders")
+    .update({ status: "Цуцлах хүсэлт"})
+    .eq("id", orderId);
+
+    if(error) {
+      alert("Алдаа гарлаа:" + error.message);
+      
+    }else {
+      alert("Таны цуцлах хүсэлт админ руу илгээгдлээ. Түр хүлээнэ үү.");
+      fetchUserOrders(session.user.id);
+
+    }
+    setLoading(false);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault("Таны цуцлах хүсэлт админ руу илгээгдлээ. Түр хүлээнэ үү.");
     setAuthLoading(true);
     if (isLoginMode) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -143,21 +163,39 @@ export default function ProfilePage() {
             <p className="text-center text-gray-500 py-6 bg-gray-50 rounded">Одоогоор таны хийсэн захиалга байхгүй байна.</p>
           ) : (
             <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-gray-50 p-4 rounded-md border flex justify-between items-center">
+            {orders.map((order) => (
+              <div key={order.id} className="bg-gray-50 p-4 rounded-md border flex flex-col gap-3">
+                <div className="flex justify-between items-start">
                   <div>
                     <p className="font-bold text-gray-800">₮ {order.total_price?.toLocaleString()}</p>
                     <p className="text-xs text-gray-500 mt-1">Тэмдэглэл: {order.note || "Байхгүй"}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Утас: {order.phone}</p>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                    order.status === "Баталгаажсан" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {order.status}
-                  </span>
+                  <div className="text-right">
+                    {/* ТӨЛӨВ ХАРУУЛАХ ХЭСЭГ */}
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full inline-block ${
+                      order.status === "Баталгаажсан" ? "bg-green-100 text-green-800" : 
+                      order.status === "Цуцлагдсан" ? "bg-red-100 text-red-800" :
+                      order.status === "Цуцлах хүсэлт" ? "bg-orange-100 text-orange-800" :
+                      "bg-yellow-100 text-yellow-800"
+                    }`}>
+                      {order.status}
+                    </span>
+          
+                    {/* 💡 ШИНЭ: Цуцлах хүсэлт илгээх товч (Зөвхөн хүлээгдэж буй үед л харагдана) */}
+                    {order.status === "Хүлээгдэж буй" && (
+                      <button 
+                        onClick={() => requestCancellation(order.id)}
+                        className="block mt-2 text-xs text-red-500 hover:text-red-700 underline text-right w-full"
+                      >
+                        Цуцлах хүсэлт илгээх
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
+
           )}
         </div>
       </div>
